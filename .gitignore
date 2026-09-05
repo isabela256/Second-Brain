@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+
+# runtime state — never commit tracker DB or Gmail credentials
+data/*
+!data/.gitkeep
+secrets/*
+!secrets/.gitkeep
+!secrets/cv_profile.example.txt

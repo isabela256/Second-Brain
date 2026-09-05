@@ -1,0 +1,18 @@
+use_default_settings: true
+
+general:
+  instance_name: "second-brain-searxng"
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
+
+server:
+  secret_key: "change-this-local-only-secret-key-second-brain"
+  limiter: false
+  image_proxy: false
+
+ui:
+  static_use_hash: true

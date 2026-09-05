@@ -1,0 +1,64 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: second-brain-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    environment:
+      # keep the model resident between the ~30s gaps in a run so it isn't
+      # reloaded (and re-warmed) for every single listing
+      - OLLAMA_KEEP_ALIVE=30m
+    volumes:
+      - ollama_data:/root/.ollama
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: second-brain-webui
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - open_webui_data:/app/backend/data
+      - ./data:/app/backend/data/second_brain
+      - ./agent/tools:/app/backend/data/second_brain_tools:ro
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: second-brain-searxng
+    restart: unless-stopped
+    ports:
+      - "8888:8080"
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+      - UWSGI_WORKERS=2
+
+  agent:
+    build: ./agent
+    container_name: second-brain-agent
+    restart: unless-stopped
+    depends_on:
+      - ollama
+      - searxng
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5:3b
+      - SEARXNG_URL=http://searxng:8080
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY:-}
+      - GMAIL_TO=${GMAIL_TO:-your_email@example.com}
+      - DIGEST_HOUR=7
+      - DIGEST_MINUTE=0
+      - TIMEZONE=America/Guayaquil
+    volumes:
+      - ./data:/app/data
+      - ./secrets:/app/secrets
+
+volumes:
+  ollama_data:
+  open_webui_data:
